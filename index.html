@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<title>Vòng quay số – FIX CHUẨN</title>
+<style>
+body{
+  margin:0;
+  height:100vh;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  background:#efe6ff;
+  font-family:system-ui;
+}
+.card{
+  background:white;
+  padding:20px;
+  border-radius:20px;
+  width:360px;
+  text-align:center;
+}
+canvas{border-radius:50%}
+.pointer{
+  position:absolute;
+  top:-8px;
+  left:50%;
+  transform:translateX(-50%);
+  width:0;height:0;
+  border-left:10px solid transparent;
+  border-right:10px solid transparent;
+  border-top:18px solid #9b7bff;
+}
+button{
+  margin-top:12px;
+  padding:10px;
+  width:100%;
+  border:0;
+  border-radius:12px;
+  background:#9b7bff;
+  color:white;
+  font-weight:600;
+  cursor:pointer;
+}
+</style>
+</head>
+<body>
+
+<div class="card">
+  <h3>🎯 Vòng quay số</h3>
+  <div style="position:relative">
+    <div class="pointer"></div>
+    <canvas id="wheel" width="300" height="300"></canvas>
+  </div>
+  <button id="spin">QUAY</button>
+</div>
+
+<script>
+const numbers = [
+  2,4,7,8,9,13,14,15,16,17,18,19,
+  20,22,23,24,25,28,30,31,32,
+  33,34,36,37,38,42
+];
+
+const canvas = document.getElementById("wheel");
+const ctx = canvas.getContext("2d");
+const R = canvas.width / 2;
+const slice = Math.PI * 2 / numbers.length;
+
+let angle = 0;
+let spinning = false;
+
+/* ===== KẾT QUẢ CHUẨN TUYỆT ĐỐI ===== */
+function getResultFromPointer(){
+  let a =
+    angle
+    - Math.PI / 2        // bù do vẽ xoay -90°
+    - slice / 2;         // 🔥 bù tâm lát
+
+  a = a % (Math.PI * 2);
+  if (a < 0) a += Math.PI * 2;
+
+  const index =
+    Math.floor((Math.PI * 2 - a) / slice) % numbers.length;
+
+  return numbers[index];
+}
+
+/* ===== VẼ ===== */
+function draw(){
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+
+  for(let i=0;i<numbers.length;i++){
+    const a0 = angle - Math.PI/2 + i*slice;
+    const a1 = a0 + slice;
+
+    ctx.beginPath();
+    ctx.moveTo(R,R);
+    ctx.arc(R,R,R-5,a0,a1);
+    ctx.closePath();
+
+    ctx.fillStyle = i%2 ? "#d9ccff" : "#f1eaff";
+    ctx.fill();
+    ctx.strokeStyle="#b9a7ff";
+    ctx.stroke();
+
+    ctx.save();
+    ctx.translate(R,R);
+    ctx.rotate(a0 + slice/2);
+    ctx.textAlign="right";
+    ctx.font="bold 13px system-ui";
+    ctx.fillStyle="#4b3f72";
+    ctx.fillText(numbers[i], R-12, 4);
+    ctx.restore();
+  }
+}
+
+/* ===== QUAY ===== */
+document.getElementById("spin").onclick = ()=>{
+  if(spinning) return;
+  spinning = true;
+
+  const start = angle;
+  const end = angle + (5 + Math.random()*2)*Math.PI*2;
+
+  const t0 = performance.now();
+  const duration = 2500;
+
+  function ease(t){ return 1 - Math.pow(1 - t, 3); }
+
+  function anim(t){
+    let p = Math.min(1, (t - t0) / duration);
+    angle = start + (end - start) * ease(p);
+    draw();
+
+    if(p < 1) requestAnimationFrame(anim);
+    else{
+      spinning = false;
+      document.getElementById("result").textContent =
+        "Kết quả: " + getResultFromPointer();
+    }
+  }
+
+  requestAnimationFrame(anim);
+};
+
+draw();
+</script>
+</body>
+</html>
